@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}History — REZ.AI{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <h1>Analysis History</h1>
+    <p class="sub">{{ reports|length }} report{{ 's' if reports|length != 1 else '' }} on record — most recent first.</p>
+</div>
+
+{% if not reports %}
+<div class="history-empty">
+    <p>No analyses yet.</p>
+    <a href="/dashboard" class="btn btn-outline">Run your first analysis →</a>
+</div>
+
+{% else %}
+{% for r in reports %}
+{% set result = r.result %}
+{% set score = result.get("ats_score", "—") %}
+
+{% if score != "—" %}
+{% if score >= 70 %}
+{% set badge_class = "high" %}
+{% elif score >= 45 %}
+{% set badge_class = "mid" %}
+{% else %}
+{% set badge_class = "low" %}
+{% endif %}
+{% else %}
+{% set badge_class = "" %}
+{% endif %}
+
+<div class="report-card" id="report-{{ r.id }}">
+    <div class="report-header" onclick="toggleReport('report-{{ r.id }}')">
+        <div class="report-header-left">
+            <span class="report-role">{{ r.role }}</span>
+            <div class="report-meta">
+            <span>
+              {% if r.created_at %}
+                {{ r.created_at.strftime('%d %b %Y, %H:%M') }}
+              {% endif %}
+            </span>
+            </div>
+        </div>
+        <div style="display:flex; align-items:center; gap: 12px;">
+            {% if score != "—" %}
+            <span class="report-ats-badge {{ badge_class }}">ATS {{ score }}</span>
+            {% endif %}
+            <span class="report-toggle">+</span>
+        </div>
+    </div>
+
+    <div class="report-body">
+
+        {# ATS / Impression #}
+        {% if result.get("ats_score") %}
+        <div style="margin-top: 16px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border);">
+            <p style="font-family: var(--mono); font-size: var(--size-xs); color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px;">Recruiter Impression</p>
+            <p style="font-size: var(--size-sm);">{{ result.get("recruiter_impression", "—") }}</p>
+        </div>
+        {% endif %}
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;" class="report-inner-grid">
+            <div>
+                <p style="font-family: var(--mono); font-size: var(--size-xs); color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;">Strengths</p>
+                <ul class="check-list positive" style="font-size: var(--size-sm);">
+                    {% for s in result.get("strengths", [])[:3] %}
+                    <li>{{ s }}</li>
+                    {% else %}
+                    <li>—</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div>
+                <p style="font-family: var(--mono); font-size: var(--size-xs); color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;">Key Gaps</p>
+                <div class="tag-list">
+                    {% for s in result.get("missing_skills", [])[:6] %}
+                    <span class="tag tag-missing">{{ s }}</span>
+                    {% else %}
+                    <span style="font-size: var(--size-xs); color: var(--muted); font-family: var(--mono);">None</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <p style="font-family: var(--mono); font-size: var(--size-xs); color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;">Resume Preview</p>
+            <p class="report-preview">{{ r.resume_preview }}…</p>
+        </div>
+
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function toggleReport(id) {
+      const card = document.getElementById(id);
+      card.classList.toggle('open');
+    }
+</script>
+
+<style>
+    @media (max-width: 600px) {
+      .report-inner-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+</style>
+{% endblock %}

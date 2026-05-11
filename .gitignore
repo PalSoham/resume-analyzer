@@ -1,0 +1,57 @@
+# ── Environment & Secrets ─────────────────────────────────────────────────
+.env
+*.env
+.env.*
+!.env.example
+
+# ── TiDB / SSL Certificates ───────────────────────────────────────────────
+ca.pem
+*.pem
+*.crt
+*.key
+
+# ── Python ────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# ── Virtual Environments ──────────────────────────────────────────────────
+env/
+venv/
+.venv/
+ENV/
+
+# ── Distribution / Build ──────────────────────────────────────────────────
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# ── Flask / Werkzeug ──────────────────────────────────────────────────────
+instance/
+.webassets-cache
+
+# ── Uploads (if stored locally) ───────────────────────────────────────────
+uploads/
+
+# ── IDE ───────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# ── OS ────────────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+Thumbs.db
+desktop.ini
+
+# ── Logs ──────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+Resume.iml

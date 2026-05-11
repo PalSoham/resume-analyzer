@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}REZUME.AI{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<header>
+    <div class="container">
+        <div class="header-inner">
+            <a href="/dashboard" class="logo">REZ<span>.</span>AI</a>
+
+            <button class="hamburger" id="hamburger" aria-label="Toggle navigation">☰</button>
+
+            <nav id="main-nav">
+                <a href="/dashboard">Dashboard</a>
+                <a href="/history">History</a>
+                <a href="/logout" class="nav-logout">Logout</a>
+            </nav>
+        </div>
+    </div>
+</header>
+
+<main>
+    <div class="container">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <ul class="flash-list">
+            {% for category, message in messages %}
+            <li class="flash {{ category }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+
+    </div>
+</main>
+
+<footer>
+    <div class="container">
+        <div class="footer-inner">
+            <p>© 2026 REZ.AI — Resume Analysis Engine</p>
+            <p>Powered by Google Genai</p>
+        </div>
+    </div>
+</footer>
+
+<script>
+    // Mobile nav toggle
+    document.getElementById('hamburger').addEventListener('click', function () {
+      document.getElementById('main-nav').classList.toggle('open');
+    });
+</script>
+
+{% block scripts %}{% endblock %}
+
+</body>
+</html>

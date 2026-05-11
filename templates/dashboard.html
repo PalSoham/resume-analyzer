@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — REZ.AI{% endblock %}
+
+{% block content %}
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loading-overlay">
+    <div class="loading-bar"></div>
+    <p class="loading-text">Analyzing Resume…</p>
+</div>
+
+<div class="page-header">
+    <div class="page-header__top" style="display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+        <h1>Resume Analyzer</h1>
+        <span style="font-family: var(--mono); font-size: var(--size-xs); color: var(--muted); letter-spacing: 0.08em;">
+      {{ user }}
+    </span>
+    </div>
+    <p class="sub">Upload or paste a resume. Specify a target role. Get a recruiter-grade analysis.</p>
+</div>
+
+<div class="upload-card">
+    <h2>Submit Resume</h2>
+    <form method="POST" enctype="multipart/form-data" id="analyze-form">
+
+        <div class="form-group">
+            <label class="form-label" for="role">Target Role</label>
+            <input type="text" id="role" name="role" placeholder="e.g. Senior Backend Engineer, Product Manager, ML Engineer"
+                   value="{{ role }}" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="resume">Paste Resume Text</label>
+            <textarea id="resume" name="resume" placeholder="Paste the full text of your resume here…"></textarea>
+        </div>
+
+        <div class="divider-or"><span>or upload file</span></div>
+
+        <div class="form-group">
+            <div class="file-input-wrapper">
+                <div class="file-input-display" id="file-display">
+                    <span class="icon">⬆</span>
+                    <span id="file-label">Click to select PDF or DOCX — max 5 MB</span>
+                </div>
+                <input type="file" name="file" id="file-input" accept=".pdf,.docx">
+            </div>
+            <p class="file-hint">Uploading a file will override pasted text.</p>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="submit-btn">
+            Run Analysis →
+        </button>
+    </form>
+</div>
+
+{% if result %}
+
+{% if result.error %}
+<div class="error-block">
+    <strong>Analysis Error</strong>
+    {{ result.error }}
+</div>
+
+{% else %}
+
+{# ── ATS Score ─────────────────────────────────────────────────── #}
+{% set score = result.get("ats_score", 0) %}
+{% if score >= 70 %}
+{% set score_class = "score-high" %}
+{% elif score >= 45 %}
+{% set score_class = "score-mid" %}
+{% else %}
+{% set score_class = "score-low" %}
+{% endif %}
+
+<div class="ats-block">
+    <div>
+        <p class="ats-score-label">ATS Score</p>
+        <div class="ats-score-number {{ score_class }}">{{ score }}</div>
+        <div class="ats-bar">
+            <div class="ats-bar-fill {{ score_class }}" style="width: {{ score }}%;"></div>
+        </div>
+    </div>
+    <div>
+        <p style="font-family: var(--mono); font-size: var(--size-xs); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px;">
+            Recruiter Impression
+        </p>
+        <p class="prose-block">{{ result.get("recruiter_impression", "—") }}</p>
+    </div>
+</div>
+
+<div class="results-grid">
+
+    {# ── Skills Present / Missing ────────────────────────────────── #}
+    <div class="results-cols">
+        <div class="result-section">
+            <div class="result-section-header">
+                <h3>Skills Present</h3>
+            </div>
+            <div class="result-section-body">
+                <div class="tag-list">
+                    {% for s in result.get("skills_present", []) %}
+                    <span class="tag tag-present">{{ s }}</span>
+                    {% else %}
+                    <span style="font-family: var(--mono); font-size: var(--size-xs); color: var(--muted);">None detected</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="result-section">
+            <div class="result-section-header">
+                <h3>Missing Skills</h3>
+            </div>
+            <div class="result-section-body">
+                <div class="tag-list">
+                    {% for s in result.get("missing_skills", []) %}
+                    <span class="tag tag-missing">{{ s }}</span>
+                    {% else %}
+                    <span style="font-family: var(--mono); font-size: var(--size-xs); color: #2d6a4f;">No critical gaps found</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ── Strengths / Weaknesses ──────────────────────────────────── #}
+    <div class="results-cols">
+        <div class="result-section">
+            <div class="result-section-header">
+                <h3>Strengths</h3>
+            </div>
+            <div class="result-section-body">
+                <ul class="check-list positive">
+                    {% for s in result.get("strengths", []) %}
+                    <li>{{ s }}</li>
+                    {% else %}
+                    <li>None identified</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="result-section">
+            <div class="result-section-header">
+                <h3>Weaknesses</h3>
+            </div>
+            <div class="result-section-body">
+                <ul class="check-list negative">
+                    {% for s in result.get("weaknesses", []) %}
+                    <li>{{ s }}</li>
+                    {% else %}
+                    <li>None identified</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    {# ── Keyword Relevance ───────────────────────────────────────── #}
+    <div class="result-section">
+        <div class="result-section-header">
+            <h3>Keyword Relevance</h3>
+        </div>
+        <div class="result-section-body">
+            <p class="prose-block">{{ result.get("keyword_relevance", "—") }}</p>
+        </div>
+    </div>
+
+    {# ── Experience / Projects / Impact ──────────────────────────── #}
+    <div class="results-cols">
+        <div class="result-section">
+            <div class="result-section-header">
+                <h3>Experience Evaluation</h3>
+            </div>
+            <div class="result-section-body">
+                <p class="prose-block">{{ result.get("experience_evaluation", "—") }}</p>
+            </div>
+        </div>
+
+        <div class="result-section">
+            <div class="result-section-header">
+                <h3>Project Quality</h3>
+            </div>
+            <div class="result-section-body">
+                <p class="prose-block">{{ result.get("project_quality", "—") }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="results-cols">
+        <div class="result-section">
+            <div class="result-section-header">
+                <h3>Measurable Impact</h3>
+            </div>
+            <div class="result-section-body">
+                <p class="prose-block">{{ result.get("measurable_impact", "—") }}</p>
+            </div>
+        </div>
+
+        <div class="result-section">
+            <div class="result-section-header">
+                <h3>Summary Quality</h3>
+            </div>
+            <div class="result-section-body">
+                <p class="prose-block">{{ result.get("summary_quality", "—") }}</p>
+            </div>
+        </div>
+    </div>
+
+    {# ── Formatting Feedback ─────────────────────────────────────── #}
+    <div class="result-section">
+        <div class="result-section-header">
+            <h3>Formatting Feedback</h3>
+        </div>
+        <div class="result-section-body">
+            <p class="prose-block">{{ result.get("resume_formatting_feedback", "—") }}</p>
+        </div>
+    </div>
+
+    {# ── Action Plan ─────────────────────────────────────────────── #}
+    <div class="result-section">
+        <div class="result-section-header">
+            <h3>Action Plan</h3>
+        </div>
+        <div class="result-section-body">
+            <ul class="check-list action">
+                {% for step in result.get("action_plan", []) %}
+                <li>{{ step }}</li>
+                {% else %}
+                <li>No actions generated</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    {# ── Interview Questions ──────────────────────────────────────── #}
+    <div class="result-section">
+        <div class="result-section-header">
+            <h3>Likely Interview Questions</h3>
+        </div>
+        <div class="result-section-body">
+            <ol class="q-list">
+                {% for q in result.get("interview_questions", []) %}
+                <li>{{ q }}</li>
+                {% else %}
+                <li>No questions generated</li>
+                {% endfor %}
+            </ol>
+        </div>
+    </div>
+
+</div>{# /results-grid #}
+{% endif %}
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // File input label update
+    const fileInput = document.getElementById('file-input');
+    const fileLabel = document.getElementById('file-label');
+    if (fileInput) {
+      fileInput.addEventListener('change', function () {
+        fileLabel.textContent = this.files[0]
+          ? this.files[0].name
+          : 'Click to select PDF or DOCX — max 5 MB';
+      });
+    }
+
+    // Loading overlay on form submit
+    const form = document.getElementById('analyze-form');
+    const overlay = document.getElementById('loading-overlay');
+    if (form && overlay) {
+      form.addEventListener('submit', function () {
+        const role = document.getElementById('role').value.trim();
+        const resume = document.getElementById('resume').value.trim();
+        const file = fileInput && fileInput.files.length > 0;
+        if (role && (resume || file)) {
+          overlay.classList.add('active');
+        }
+      });
+    }
+</script>
+{% endblock %}
