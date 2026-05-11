@@ -1,4 +1,4 @@
-# REZ.AI — AI Resume Analyzer
+# REZ.AI: AI Resume Analyzer
 
 A recruiter-grade resume analysis engine built with Flask, Gemini, and TiDB Cloud.
 Upload or paste a resume, specify a target role, and get a structured report covering
